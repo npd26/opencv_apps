@@ -153,15 +153,23 @@ class FindContoursNodelet : public opencv_apps::Nodelet
       cv::Canny(canny_output, canny_output, low_threshold_, low_threshold_ * 2, 3);
 
       /// Find contours
-      cv::findContours(canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+      cv::findContours(canny_output, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 
       /// Draw contours
       cv::Mat drawing = cv::Mat::zeros(canny_output.size(), CV_8UC3);
+
+      std::vector<cv::Point> approx;
       for (size_t i = 0; i < contours.size(); i++)
       {
+        cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.02, true);
         cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
-        cv::drawContours(drawing, contours, (int)i, color, 2, 8, hierarchy, 0, cv::Point());
+        if(fabs(cv::contourArea(contours[i])) < 100 || !(cv::isContourConvex(approx)))
+                continue;
+        if(approx.size() >=6 && approx.size() <=8)
 
+        {
+        cv::drawContours(drawing, contours, (int)i, color, 2, 8, hierarchy, 0, cv::Point());
+        }
         opencv_apps::Contour contour_msg;
         for (const cv::Point& j : contours[i])
         {
